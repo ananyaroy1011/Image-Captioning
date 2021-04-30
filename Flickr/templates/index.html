@@ -1,1 +1,273 @@
+<html>
 
+  <head>
+    <title>Image Captioning - Scene Descriptor</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="{{url_for('static', filename='css/loader.css')}}">
+  </head>
+
+  <body style="background: #EFF4F7";>
+    <div class="container-fluid" style="margin-top:2%;">
+      <div class="row">
+        <div class="col col-lg-3"></div>
+        <div class="col col-lg-6">
+          <div class="card shadow p-3 mb-5 bg-white rounded">
+          <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+            <div class="custom-file mb-3">
+              <input onchange="readURL(this);" type=file class="custom-file-input" id="multiFiles" name="files[]" multiple="multiple">
+              <label class="custom-file-label" for="customFile">Choose file</label>
+          </div>
+        </div>
+        <div class="col-md-2"></div>
+      </div>
+
+
+      <div class="row">
+        <!-- Search Type -->
+        <div class="col-lg-3"></div>
+        <div class="col-lg-3">
+          <div class="input-group">
+            <div class="input-group-btn">
+              <button type="button" id="searchtype1" class="btn btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Search Function
+              </button>
+              <div class="dropdown-menu" id="searchtype">
+                <a class="dropdown-item" href="#">Greedy Search</a>
+                <a class="dropdown-item" href="#">Beam Search k=3</a>
+                <a class="dropdown-item" href="#">Beam Search k=5</a>
+                <a class="dropdown-item" href="#">Beam Search k=7</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      <!-- Search Type -->
+
+      <!-- Preprocess -->
+        <div class="col-lg-3">
+          <div class="input-group">
+            <div class="input-group-btn">
+              <button type="button" id="prepr1" class="btn btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Preprocess
+              </button>
+              <div class="dropdown-menu" id="prepr">
+                <a class="dropdown-item" href="#" value="asd">Preprocess: Yes</a>  <!-- Preprocess for custom images -->
+                <a class="dropdown-item" href="#">Preprocess: No</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3"></div>
+
+      </div>
+      <!-- Preprocess -->
+      
+      <div class="row" style="margin-top: 10px;">
+        <div class="col-lg-5"></div>
+        <div class="col-lg-2">
+          <button id=upload class="btn btn-success">Submit</button><br><br>
+          </div>
+          <div class="col-lg-5"></div>
+        </div>
+
+        </div> 
+      </div>
+      <div class="col col-lg-3"></div>
+    </div>
+
+        <div class="card shadow p-3 mb-5 bg-white rounded">
+          <div class="row"><div class="col-lg-3"></div>
+            <div class="col-lg-6"><p id="imgdim">Resolution: </p>
+                <img class="img-fluid" id="showimg" src="#"/><br><br>
+                <!-- <p id="yolotime"></p>
+                <img class="img-fluid" id="yoloimg"/> -->
+            </div>
+            <div class="col-lg-3"></div>
+          </div>
+          <div class="row">
+            <div class="col-lg-6">
+              <p class="font-weight-bold" id="bd">(Bi-Directional LSTM)</p>
+              <p class="font-weight-bold" id="caption_1">Predicted Caption: Approach 1</p>
+              <p id="time_1"></p>
+              <p id="bleu_1"></p>
+              <table id="caption_table_1" class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Prediction</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="col-lg-6">
+              <p class="font-weight-bold" id="ud">(Uni-Directional LSTM)</p>
+              <p class="font-weight-bold" id="caption_2">Predicted Caption: Approach 2</p>
+              <p id="time_2"></p>
+              <p id="bleu_2"></p>
+              <table id="caption_table_2" class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Prediction</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>        
+        </div>
+        
+  </div>
+
+  <div id="loader"></div>
+</body>
+
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <script type="text/javascript">
+  var file_name;
+	$('#searchtype a').on('click', function(){    
+      $('#searchtype1').html($(this).html());    
+  })
+  $('#prepr a').on('click', function(){    
+      $('#prepr1').html($(this).html());    
+  })
+  
+  //Preview Image
+  function readURL(input) {
+          if (input.files && input.files[0]) {
+              var reader = new FileReader();
+              reader.onload = function (e) {
+                var img = new Image;
+
+                img.src = reader.result;
+                img.onload = function() {
+                  $('#imgdim').text('Resolution: '+img.width.toString()+'x'+img.height.toString());
+                };
+                  $('#showimg')
+                      .attr('src', e.target.result);
+              };
+              reader.readAsDataURL(input.files[0]);
+          }
+      }
+
+      $('#multiFiles').on('change',function(){
+            $(this).next('.custom-file-label').html($(this).val().replace(/^.*[\\\/]/, ''));
+            file_name = $(this).val().replace(/^.*[\\\/]/, '');
+        });
+
+      function showloader(){
+        document.getElementById("loader").style.display = "block";
+      }
+
+		$(document).ready(function (e) {
+      document.getElementById("loader").style.display = "none";
+			$('#upload').on('click', function () {
+        
+				var form_data = new FormData();
+        form_data.append("preprocess",$('#prepr1').html());
+        form_data.append("searchtype",$('#searchtype1').html());
+        form_data.append("file_name",file_name);
+        
+
+				var ins = document.getElementById('multiFiles').files.length;
+
+				if(ins == 0) {
+          alert('No file selected');
+          return;
+				} 
+				
+			  for (var x = 0; x < ins; x++) {
+					form_data.append("files[]", document.getElementById('multiFiles').files[x]);
+				}
+        
+				$.ajax({
+					  type: 'POST',
+            url: '/process_img',
+            data: form_data,
+            contentType: false,
+            cache: false,
+            processData: false,
+          beforeSend: function(){
+            document.getElementById("loader").style.display = "block";
+          },
+          complete:function(data){
+            document.getElementById("loader").style.display = "none";
+          },
+					success: function (data) {
+            // $('#yoloimg').attr('src', data['yolo_img']);
+						document.getElementById("caption_1").innerHTML = data['caption_1'];
+            document.getElementById("time_1").innerHTML = "Processing Time: "+data['time_1'].toString()+" seconds";
+            document.getElementById("bleu_1").innerHTML = "BLEU: "+data['bleu_1'];
+            document.getElementById("caption_2").innerHTML = data['caption_2'];
+            document.getElementById("time_2").innerHTML = "Processing Time: "+data['time_2'].toString()+" seconds";
+            document.getElementById("bleu_2").innerHTML = "BLEU: "+data['bleu_2'];
+
+            if (data['bleu_1']>data['bleu_2']){
+              document.getElementById("bleu_1").style.color = 'green';
+              document.getElementById("bleu_2").style.color = 'black';
+            }
+            else{
+              document.getElementById("bleu_2").style.color = 'green';
+              document.getElementById("bleu_1").style.color = 'black';
+            }
+            //document.getElementById("yolotime").innerHTML = 'YOLOV3 Time: '+data['yolo_time']+" seconds";
+            var table_1 = document.getElementById("caption_table_1");
+            for(var i = table_1.rows.length - 1; i > 0; i--)
+            {
+                table_1.deleteRow(i);
+            }
+            var table_2 = document.getElementById("caption_table_2");
+            for(var i = table_2.rows.length - 1; i > 0; i--)
+            {
+                table_2.deleteRow(i);
+            }
+                        
+            var tableRef_1 = document.getElementById('caption_table_1').getElementsByTagName('tbody')[0];
+            var acc_1 = data['acc_1'].split(" ");
+            var caption_1 = data['caption_1'].split(" ");
+            caption_1.push('<end>');
+
+            var tableRef_2 = document.getElementById('caption_table_2').getElementsByTagName('tbody')[0];
+            var acc_2 = data['acc_2'].split(" ");
+            var caption_2 = data['caption_2'].split(" ");
+            caption_2.push('<end>');
+
+            for(var i=0;i<acc_1.length;i++){
+
+              var newRow   = tableRef_1.insertRow();
+              var genword  = newRow.insertCell(0);
+              var conf  = newRow.insertCell(1);
+              
+              var captxt  = document.createTextNode(caption_1[i]);
+              var acctxt = document.createTextNode(acc_1[i].toString()+'%');
+
+              genword.appendChild(captxt);
+              conf.appendChild(acctxt);
+            }
+
+            for(var i=0;i<acc_2.length;i++){
+
+              var newRow   = tableRef_2.insertRow();
+              var genword  = newRow.insertCell(0);
+              var conf  = newRow.insertCell(1);
+
+              var captxt  = document.createTextNode(caption_2[i]);
+              var acctxt = document.createTextNode(acc_2[i].toString()+'%');
+
+              genword.appendChild(captxt);
+              conf.appendChild(acctxt);
+              }
+					},	
+				});
+			});
+		});
+	</script>
+
+</html>
